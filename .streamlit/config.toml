@@ -1,0 +1,10 @@
+[theme]
+base = "light"
+primaryColor = "#1C7C86"
+backgroundColor = "#FAF9F6"
+secondaryBackgroundColor = "#F3F2EE"
+textColor = "#1F1E1C"
+
+[server]
+maxUploadSize = 50
+fileWatcherType = "none"

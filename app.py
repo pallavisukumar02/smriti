@@ -12,7 +12,7 @@ import re
 import streamlit as st
 
 from smriti.embeddings import DEFAULT_MODEL, Embedder
-from smriti.llm import GROQ_MODELS, GroqLLM, LLMError
+from smriti.llm import GROQ_MODELS, GroqLLM, LLMError, list_chat_models
 from smriti.loaders import SUPPORTED, LoaderError
 from smriti.pipeline import Smriti
 from smriti.text import stem, tokenize
@@ -48,6 +48,14 @@ st.markdown(
 @st.cache_resource(show_spinner="Loading the embedding model (first run only)…")
 def get_embedder(name: str) -> Embedder:
     return Embedder(name)
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def available_models(api_key: str) -> list[str]:
+    try:
+        return list_chat_models(api_key) or GROQ_MODELS
+    except Exception:  # offline, bad key, etc. Fall back to the built-in list
+        return GROQ_MODELS
 
 
 def secret(name: str) -> str:
@@ -154,7 +162,8 @@ with st.sidebar:
                                 help="Free at console.groq.com/keys. Kept only for this session.")
     else:
         st.caption("✓ Groq key loaded from secrets")
-    model = st.selectbox("Groq model", GROQ_MODELS, index=0)
+    model = st.selectbox("Groq model", available_models(api_key) if api_key else GROQ_MODELS, index=0,
+                         help="Fetched live from Groq, so retired models never show up.")
 
     with st.expander("Retrieval settings"):
         mode = st.radio("Search mode", ["hybrid", "semantic", "keyword"], horizontal=True,

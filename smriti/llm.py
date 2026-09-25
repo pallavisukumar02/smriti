@@ -4,12 +4,26 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 
+# Preferred order when these are available. Groq retires models over time, so the app
+# asks Groq for the live list (see list_chat_models) and only uses this as a fallback.
 GROQ_MODELS = [
-    "llama-3.3-70b-versatile",
-    "llama-3.1-8b-instant",
     "openai/gpt-oss-120b",
+    "llama-3.3-70b-versatile",
     "openai/gpt-oss-20b",
+    "llama-3.1-8b-instant",
 ]
+
+_NOT_CHAT = ("whisper", "tts", "guard", "playai", "orpheus", "distil", "embed", "compound")
+
+
+def list_chat_models(api_key: str) -> list[str]:
+    """Return the chat models this Groq key can use right now, preferred ones first."""
+    from groq import Groq
+
+    models = Groq(api_key=api_key).models.list().data
+    ids = [m.id for m in models if getattr(m, "active", True) and not any(x in m.id.lower() for x in _NOT_CHAT)]
+    preferred = [m for m in GROQ_MODELS if m in ids]
+    return preferred + sorted(set(ids) - set(preferred))
 
 
 class LLMError(Exception):
